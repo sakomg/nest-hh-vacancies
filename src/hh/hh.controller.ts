@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { HhService } from './hh.service';
 
 @Controller('vacancy')
@@ -6,12 +6,12 @@ export class HhController {
   constructor(private readonly service: HhService) {}
 
   @Get('json')
-  getVacanciesAsJSON() {
-    return this.service.getVacanciesAsJSON();
+  getVacanciesAsJSON(@Query() params: any) {
+    return this.service.getVacanciesAsJSON(params);
   }
 
   @Get('csv')
-  getVacanciesAsCSV() {
-    return this.service.getVacanciesAsCSV();
+  getVacanciesAsCSV(@Query() params: any) {
+    return this.service.getVacanciesAsCSV(params);
   }
 }

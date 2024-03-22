@@ -1,23 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { HhApi } from './hh.api';
+import flattenObject from 'src/utils/functions/flatten';
 
-const VACANCIES_SEARCH_TEXT = 'node OR node.js OR nodejs';
 const PROFESSIONAL_ROLE_DEV = '11';
 
 @Injectable()
 export class HhService {
   constructor(private readonly api: HhApi) {}
 
-  async getVacanciesAsCSV() {
-    const json = await this.getVacanciesAsJSON();
+  async getVacanciesAsCSV(params: any) {
+    const json = await this.getVacanciesAsJSON(params);
     return this.jsonToCsv(json);
   }
 
-  async getVacanciesAsJSON() {
+  async getVacanciesAsJSON(params: any) {
     const result = [];
-    const pages = await this.getTotalPages();
+    const pages = await this.getTotalPages(params);
     for (let i = 1; i <= pages; i++) {
-      const vacancies = await this.api.fetchVacanciesByPage(PROFESSIONAL_ROLE_DEV, VACANCIES_SEARCH_TEXT, i);
+      const vacancies = await this.api.fetchVacanciesByPage(PROFESSIONAL_ROLE_DEV, params.search, i);
       if (!vacancies) {
         continue;
       }
@@ -29,8 +29,8 @@ export class HhService {
     return result;
   }
 
-  async getTotalPages() {
-    const vacancies = await this.api.fetchVacanciesByPage(PROFESSIONAL_ROLE_DEV, VACANCIES_SEARCH_TEXT, 0);
+  async getTotalPages(params: any) {
+    const vacancies = await this.api.fetchVacanciesByPage(PROFESSIONAL_ROLE_DEV, params.search, 0);
 
     if (!vacancies) {
       return 0;
@@ -43,14 +43,14 @@ export class HhService {
     return vacancies.pages;
   }
 
-  jsonToCsv(items: Array<any>) {
-    const replacer = (key: any, value: any) => (value === null ? '' : value);
-    const header = Object.keys(items[0]);
-    const csv = [
-      header.join(','),
-      ...items.map((row) => header.map((fieldName) => JSON.stringify(row[fieldName], replacer)).join(',')),
-    ].join('\r\n');
+  jsonToCsv(jsonData: Array<any>) {
+    const flattenedData = jsonData.map((obj: any) => flattenObject(obj));
 
-    return csv;
+    const headers = Object.keys(flattenedData[0]);
+    const csvHeader = headers.join(',') + '\n';
+    const csvRows = flattenedData.map((obj) => headers.map((header) => JSON.stringify(obj[header])).join(','));
+    const csvData = csvHeader + csvRows.join('\n');
+
+    return csvData;
   }
 }
